@@ -17,29 +17,33 @@ import (
 )
 
 func main() {
-	path := "messages"
-	err := filepath.WalkDir(path, func(path string, f os.DirEntry, err error) error {
+	ex, err := os.Executable()
+	if err != nil {
+		log.Fatalf("os.Executable() error: %s", err.Error())
+	}
+	executableDirPath := filepath.Dir(ex)
+	err = filepath.WalkDir(executableDirPath+"/messages", func(path string, f os.DirEntry, err error) error {
 		if f.Name() == path {
 			return nil
 		}
-		if f.IsDir() && f.Name()[0] != '-' { //directories starts with "-" contains messages with communities/bots
-			return iterateOverMessageDir(path, f.Name())
+		if f.IsDir() && f.Name()[0] != '-' { //directories starts with "-" contains messages with communities/bots //todo confs
+			return readDialog(path, f.Name(), executableDirPath)
 		}
 		return nil
 	})
 	if err != nil {
-		log.Println(err)
+		log.Fatalf("filepath.WalkDir() error: %s", err.Error())
 	}
 }
 
-func iterateOverMessageDir(path, dirName string) error {
+func readDialog(path, dirName, executableDir string) error {
 	var oggCount, jpgCount int64
 	return filepath.WalkDir(path, func(path string, f os.DirEntry, err error) error {
 		if f.Name() == dirName {
 			return nil
 		}
 		if strings.Contains(f.Name(), "messages") {
-			err = process(path, &oggCount, &jpgCount)
+			err = readDialogFile(path, executableDir, &oggCount, &jpgCount)
 			if err != nil {
 				return err
 			}
@@ -48,8 +52,8 @@ func iterateOverMessageDir(path, dirName string) error {
 	})
 }
 
-func process(filePath string, oggCount, jpgCount *int64) error {
-	data, err := os.ReadFile(filePath)
+func readDialogFile(dialogPath, executableDir string, oggCount, jpgCount *int64) error {
+	data, err := os.ReadFile(dialogPath)
 	if err != nil {
 		return err
 	}
@@ -59,13 +63,15 @@ func process(filePath string, oggCount, jpgCount *int64) error {
 	}
 
 	dialogueName := reader.Find("div.message__header > a").First().Text()
-	err = os.MkdirAll(fmt.Sprintf("files/%s/voices", dialogueName), os.ModePerm)
+	err = os.MkdirAll(fmt.Sprintf("%s/files/%s/voices", executableDir, dialogueName), os.ModePerm)
 	if err != nil {
+		log.Printf("mkdir error:%s", err.Error())
 		return err
 	}
 
-	err = os.MkdirAll(fmt.Sprintf("files/%s/pictures", dialogueName), os.ModePerm)
+	err = os.MkdirAll(fmt.Sprintf("%s/files/%s/pictures", executableDir, dialogueName), os.ModePerm)
 	if err != nil {
+		log.Printf("mkdir error:%s", err.Error())
 		return err
 	}
 
@@ -81,10 +87,10 @@ func process(filePath string, oggCount, jpgCount *int64) error {
 			switch fExt := fileURL[len(fileURL)-3:]; fExt {
 			case "ogg":
 				c := atomic.AddInt64(oggCount, 1)
-				fPath = fmt.Sprintf("files/%s/voices/%d.ogg", dialogueName, c)
+				fPath = fmt.Sprintf("%s/files/%s/voices/%d.ogg", executableDir, dialogueName, c) //todo constants
 			case "jpg":
 				c := atomic.AddInt64(jpgCount, 1)
-				fPath = fmt.Sprintf("files/%s/pictures/%d.jpg", dialogueName, c)
+				fPath = fmt.Sprintf("%s/files/%s/pictures/%d.jpg", executableDir, dialogueName, c)
 			default:
 				return
 			}
