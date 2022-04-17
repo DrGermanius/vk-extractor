@@ -2,7 +2,7 @@
 
 The app allowing to extract images and voice messages from vk archive of your account. 
 
-# how to use
+# How to use
 
 1. Download the binary file for your platform using [this link](https://github.com/DrGermanius/vk-extractor/tree/main/bin). If there is no binary for your platform you can build it by yourself. For this clone the repo and execute ```go build```.
 2. Place the binary file of the app near your vk messages directory. Or just put the binary into unarchived vk directory.
