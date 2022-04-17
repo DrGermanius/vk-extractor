@@ -26,7 +26,7 @@ func main() {
 		if f.Name() == path {
 			return nil
 		}
-		if f.IsDir() && f.Name()[0] != '-' { //directories starts with "-" contains messages with communities/bots //todo confs
+		if f.IsDir() && !isCommunityChat(f.Name()) && !isGroupChat(f.Name()) { //todo add support of group chats
 			return readDialog(path, f.Name(), executableDirPath)
 		}
 		return nil
@@ -34,6 +34,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("filepath.WalkDir() error: %s", err.Error())
 	}
+	log.Println("Done.")
 }
 
 func readDialog(path, dirName, executableDir string) error {
@@ -134,4 +135,16 @@ func downloadFile(URL string) (*bytes.Buffer, error) {
 		return nil, err
 	}
 	return &picBytes, nil
+}
+
+// isCommunityChat used for detecting chats with bots/communities.
+// Message directories starts with "-" contains these chats.
+func isCommunityChat(s string) bool {
+	return s[0] == '-'
+}
+
+// isGroupChat used for detecting group chats.
+// Message directories starts with "200000" contains these chats.
+func isGroupChat(s string) bool {
+	return strings.HasPrefix(s, "200000")
 }
