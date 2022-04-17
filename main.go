@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -111,7 +110,7 @@ func createFile(b *bytes.Buffer, f string) error {
 	}
 	defer file.Close()
 
-	_, err = io.Copy(file, bufio.NewReader(b))
+	_, err = io.Copy(file, b)
 	if err != nil {
 		return err
 	}
@@ -130,7 +129,7 @@ func downloadFile(URL string) (*bytes.Buffer, error) {
 	}
 
 	var picBytes bytes.Buffer
-	_, err = io.Copy(bufio.NewWriter(&picBytes), res.Body)
+	_, err = io.Copy(&picBytes, res.Body)
 	if err != nil {
 		return nil, err
 	}
